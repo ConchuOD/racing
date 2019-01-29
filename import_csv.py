@@ -31,12 +31,12 @@ class Lap:
 		sector_3, s3_improve, avg_speed, elapsed, hour, s1_large, s2_large, s3_large, top_speed, pit_time):
 		self.driver_number = int(driver_number)
 		self.lap_number = int(lap_number)
-		self.laptime = convertFromHoursMinsSec2Sec(lap_time)
+		self.lap_time = convertFromHoursMinsSec2Sec(lap_time)
 		self.improve_lap_bool = True if improve_lap == "1" else False # is it B?
 		self.inlap_bool = True if inlap == "B" else False
 		self.sector_1 = convertFromHoursMinsSec2Sec(sector_1)
-		self.sector_3 = convertFromHoursMinsSec2Sec(sector_2)
-		self.sector_2 = convertFromHoursMinsSec2Sec(sector_3)
+		self.sector_2 = convertFromHoursMinsSec2Sec(sector_2)
+		self.sector_3 = convertFromHoursMinsSec2Sec(sector_3)
 		self.s1_improve_bool = True if s1_improve == "1" else False
 		self.s2_improve_bool = True if s3_improve == "1" else False
 		self.s3_improve_bool = True if s2_improve == "1" else False
@@ -50,8 +50,8 @@ class Lap:
 		self.pit_time = convertFromHoursMinsSec2Sec(pit_time)
 
 class Car:
-	laps = list()
 	def __init__(self, number, drivers, team, manufact, category, first_lap):
+		self.laps = list()
 		self.number = int(number)
 		self.drivers = drivers
 		self.team = team
@@ -62,8 +62,36 @@ class Car:
 	def addLap(self,lap):
 		self.laps.append(lap)
 
+	def bestS1(self):
+		best_s1 = 999
+		for lap in self.laps:
+			if lap.sector_1 < best_s1:
+				best_s1 = lap.sector_1
+		return best_s1
+
+	def bestS2(self):
+		best_s2 = 999
+		for lap in self.laps:
+			if lap.sector_2 < best_s2:
+				best_s2 = lap.sector_2
+		return best_s2
+
+	def bestS3(self):
+		best_s3 = 999
+		for lap in self.laps:
+			if lap.sector_3 < best_s3:
+				best_s3 = lap.sector_3
+		return best_s3
+
+	def bestLap(self):
+		best_lap = 999
+		for lap in self.laps:
+			if lap.lap_time < best_lap:
+				best_lap = lap.lap_time
+		return best_lap
+
 	def sumOfBestSectors(self):
-		return 0
+		return self.bestS1() + self.bestS2() + self.bestS3()
 
 # 1 NUMBER, 2 DRIVER_NUMBER, 3 LAP_NUMBER, 4 LAP_TIME, 5 LAP_IMPROVEMENT, 6 CROSSING_FINISH_LINE_IN_PIT, 7 S1, 8 S1_IMPROVEMENT, 9 S2,
 # 10 S2_IMPROVEMENT, 11 S3, 12 S3_IMPROVEMENT, 13 KPH, 14 ELAPSED, 15 HOUR, 16 S1_LARGE, 17 S2_LARGE, 18 S3_LARGE, 19 TOP_SPEED,
@@ -75,14 +103,11 @@ def getCarKeyValuePairs():
 		line_count = 0
 		cars_dict = {}
 		for row in csv_reader:
-			car_num = int(row['NUMBER'])
-
 			if line_count == 0:
-				print(f'Column names are {", ".join(row)}')
-				line_count += 1
-
+				pass #used to have stuff
 			elif line_count > 0:
-				if cars_dict.get(car_num) == None: #TODO - convert this to a number by removing 3 bytes, time -> seconds
+				car_num = int(row['NUMBER'])
+				if cars_dict.get(car_num) == None: 
 					driver_dict = {int(row['DRIVER_NUMBER']) : row['DRIVER_NAME']}
 					first_lap = Lap(row['DRIVER_NUMBER'], row['LAP_NUMBER'],row['LAP_TIME'],row['LAP_IMPROVEMENT'], \
 						row['CROSSING_FINISH_LINE_IN_PIT'], row['S1'], row['S1_IMPROVEMENT'], row['S2'], row['S2_IMPROVEMENT'], \
@@ -91,7 +116,7 @@ def getCarKeyValuePairs():
 					car = Car(car_num,driver_dict,row['TEAM'],row['MANUFACTURER'],row['CLASS'],first_lap)
 					cars_dict[car_num] = car
 
-				elif cars_dict.get(car_num).drivers.get(row['DRIVER_NUMBER']) == None:
+				elif cars_dict.get(car_num).drivers.get(int(row['DRIVER_NUMBER'])) == None:
 					driver_dict = cars_dict.get(car_num).drivers
 					driver_dict[int(row['DRIVER_NUMBER'])] = row['DRIVER_NAME']
 					lap = Lap(row['DRIVER_NUMBER'], row['LAP_NUMBER'],row['LAP_TIME'],row['LAP_IMPROVEMENT'], \
@@ -106,10 +131,16 @@ def getCarKeyValuePairs():
 						row['S3'], row['S3_IMPROVEMENT'], row['KPH'], row['ELAPSED'], row['HOUR'], row['S1_LARGE'], row['S2_LARGE'], \
 						row['S3_LARGE'], row['TOP_SPEED'], row['PIT_TIME'])
 					cars_dict.get(car_num).addLap(lap)
-				line_count += 1
-		return cars_dict
+			line_count += 1
+
+	return cars_dict
 	
 cars = getCarKeyValuePairs()
 
-piggy = cars.get(92)
-print(piggy)
+car_hash = 92
+piggy = cars.get(car_hash)
+sobs = piggy.sumOfBestSectors();
+bl = piggy.bestLap()
+print("Car #" + str(car_hash) + ":")
+print("Best SOBS " + str(sobs) + "seconds")
+print("Best lap " + str(bl) + "seconds")
